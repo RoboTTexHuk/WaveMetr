@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>LuckyWave Metr</title>
+    <!-- Полный экран на iPhone / iPad, с учётом вырезов -->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-3.1.1.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <script>
+        window.FontAwesomeConfig = { autoReplaceSvg: 'nest' };
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#022c22'
+                        },
+                        appbg: {
+                            DEFAULT: '#050816',
+                            soft: '#111827',
+                            softer: '#1f2933'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system','BlinkMacSystemFont','Inter','system-ui','sans-serif']
+                    },
+                    boxShadow: {
+                        'card': '0 18px 35px rgba(0,0,0,0.55)'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        :root {
+            /* Safe area (iPhone/iPad с вырезами) */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --safe-left: env(safe-area-inset-left);
+            --safe-right: env(safe-area-inset-right);
+        }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { display: none; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background: #000;
+            color: #fff;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========= ГЛАВНЫЙ ФУЛЛСКРИН ДЛЯ IPAD/IPHONE ========= */
+        #app-root {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+            padding-left: var(--safe-left);
+            padding-right: var(--safe-right);
+            background: radial-gradient(circle at top left,#111827,#050816 55%);
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /*
+           На iPad планшете экран шире, поэтому:
+           - по умолчанию: max-width для "телефона"
+           - для iPad (>= 768px): убираем max-width => растягиваем на всю ширину
+        */
+        #app-wrapper {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            background: transparent;
+            color: white;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,.75);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* iPad портрет/ландшафт */
+        @media (min-width: 768px) {
+            #app-wrapper {
+                max-width: 100%;   /* на iPad – во всю ширину */
+                box-shadow: none;  /* убираем "телефонный" шэдоу, как нативное приложение */
+            }
+        }
+
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10b981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10b981;
+        }
+
+        @keyframes slide-up {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slide-up 0.3s cubic-bezier(.16,1,.3,1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-root">
+    <div id="app-wrapper" class="relative">
+
+        <!-- ============ TOP APP BAR ============ -->
+        <header class="shrink-0 z-30 px-5 pt-4 pb-3 bg-gradient-to-b from-appbg via-appbg/95 to-transparent flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <!-- Logo -->
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/40">
+                    <i class="fa-solid fa-water text-white text-lg"></i>
+                </div>
+                <div class="flex flex-col leading-tight">
+                    <span class="text-[11px] uppercase tracking-[0.25em] text-gray-400">lucky</span>
+                    <span class="text-xl font-extrabold">
+                        <span class="text-white">Metr</span><span class="text-brand-500">.</span>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ============ SCROLLABLE CONTENT ============ -->
+        <div class="flex-1 overflow-hidden relative">
+            <!-- 1. WAVE METER -->
+            <main id="tab-meter" class="tab-content active pb-24 h-full overflow-y-auto hide-scrollbar">
+                <section class="px-5 pb-6 space-y-6">
+
+                    <div class="flex items-center justify-between mt-2">
+                        <div>
+                            <h1 class="text-2xl font-semibold tracking-tight">Wave Metr</h1>
+                            <p class="text-xs text-gray-400 mt-1">Log your latest session in seconds.</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-[10px] bg-white/5 text-gray-300 border border-white/5">
+                            Live · <span id="meter-count">0 logs</span>
+                        </span>
+                    </div>
+
+                    <!-- Add Observation Card -->
+                    <div class="bg-appbg-soft rounded-3xl p-4 shadow-card border border-white/10">
+                        <!-- Photo -->
+                        <label class="block relative w-full h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-appbg-softer via-appbg to-black/90 border border-dashed border-white/15 cursor-pointer group mb-4">
+                            <input id="wave-photo" type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center transition-all group-hover:bg-white/5">
+                                <div class="w-11 h-11 rounded-2xl bg-appbg-soft flex items-center justify-center text-brand-400 mb-2 border border-white/10 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-camera text-lg"></i>
+                                </div>
+                                <p class="text-xs font-medium text-gray-200 mb-1">Add wave photo</p>
+                                <p class="text-[11px] text-gray-400">Tap to choose from gallery or use camera</p>
+                            </div>
+                            <img id="wave-photo-preview" src="" alt="" class="w-full h-full object-cover hidden" />
+                        </label>
+
+                        <!-- Spot / location -->
+                        <div class="space-y-3">
+                            <div class="flex items-center bg-black/30 rounded-2xl px-3 py-2 border border-white/10">
+                                <i class="fa-solid fa-location-dot text-brand-500 text-sm mr-3"></i>
+                                <input id="spot-input" type="text"
+                                       placeholder="Spot (beach, city, country)"
+                                       class="bg-transparent flex-1 text-sm placeholder-gray-500 focus:outline-none text-gray-100" />
+                            </div>
+
+                            <!-- Date + Time -->
+                            <div class="flex space-x-3">
+                                <div class="flex-1 flex items-center bg-black/30 rounded-2xl px-3 py-2 border border-white/10">
+                                    <i class="fa-regular fa-calendar text-gray-400 text-xs mr-2.5"></i>
+                                    <input id="date-input" type="date"
+                                           class="bg-transparent flex-1 text-sm focus:outline-none text-gray-100 [color-scheme:dark]" />
+                                </div>
+                                <div class="flex-1 flex items-center bg-black/30 rounded-2xl px-3 py-2 border border-white/10">
+                                    <i class="fa-regular fa-clock text-gray-400 text-xs mr-2.5"></i>
+                                    <input id="time-input" type="time"
+                                           class="bg-transparent flex-1 text-sm focus:outline-none text-gray-100 [color-scheme:dark]" />
+                                </div>
+                            </div>
+
+                            <!-- Weather -->
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-2">Weather</p>
+                                <div id="weather-selector" class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1"></div>
+                            </div>
+
+                            <!-- Height slider -->
+                            <div class="mt-1">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-400 uppercase tracking-wide">Wave height (optional)</span>
+                                    <span id="height-display" class="text-sm font-semibold text-brand-400">~ 4.0 ft</span>
+                                </div>
+                                <input id="height-range" type="range" min="0" max="30" step="0.5" value="4"
+                                       class="w-full h-1.5 appearance-none rounded-full bg-white/10 accent-brand-500" />
+                                <div class="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                                    <span>Flat</span><span>Big</span><span>XXL</span>
+                                </div>
+                            </div>
+
+                            <!-- Save -->
+                            <button id="save-btn"
+                                    class="mt-3 w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-400 text-sm font-semibold text-black shadow-lg shadow-emerald-500/40 active:scale-[0.97] transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Save observation</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Logs -->
+                    <section class="mt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-sm font-semibold tracking-wide uppercase text-gray-400">Recent observations</h2>
+                            <button class="text-[11px] text-brand-400 flex items-center space-x-1">
+                                <i class="fa-solid fa-sort-amount-down text-xs"></i><span>Newest</span>
+                            </button>
+                        </div>
+
+                        <div id="logs-container" class="space-y-3 pb-6"></div>
+                    </section>
+                </section>
+            </main>
+
+            <!-- 2. TOP WAVES -->
+            <main id="tab-top" class="tab-content pb-24 h-full overflow-y-auto hide-scrollbar">
+                <section class="px-5 pb-6 space-y-5">
+                    <div class="mt-1">
+                        <h1 class="text-2xl font-semibold tracking-tight">Top Waves</h1>
+                        <p class="text-xs text-gray-400 mt-1">10 legendary big-wave arenas around the world.</p>
+                    </div>
+                    <div id="topwaves-list" class="space-y-4 pb-8"></div>
+                </section>
+            </main>
+
+            <!-- 3. ANALYTICS -->
+            <main id="tab-analytics" class="tab-content pb-24 h-full overflow-y-auto hide-scrollbar">
+                <section class="px-5 pb-6 space-y-5">
+                    <div class="mt-1">
+                        <h1 class="text-2xl font-semibold tracking-tight">Wave Analytics</h1>
+                        <p class="text-xs text-gray-400 mt-1">How your sessions stack up over time.</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">
+                        <button id="filter-all" class="filter-chip px-4 py-1.5 rounded-full text-[11px] font-semibold bg-brand-500 text-black shadow-md whitespace-nowrap">
+                            All spots
+                        </button>
+                        <button id="filter-month" class="filter-chip px-4 py-1.5 rounded-full text-[11px] bg-appbg-soft text-gray-200 border border-white/10 whitespace-nowrap">
+                            Last 30 days
+                        </button>
+                        <button id="filter-sunny" class="filter-chip px-4 py-1.5 rounded-full text-[11px] bg-appbg-soft text-gray-200 border border-white/10 whitespace-nowrap">
+                            Sunny only
+                        </button>
+                        <button id="filter-storm" class="filter-chip px-4 py-1.5 rounded-full text-[11px] bg-appbg-soft text-gray-200 border border-white/10 whitespace-nowrap">
+                            Storm sessions
+                        </button>
+                    </div>
+
+                    <!-- Line chart -->
+                    <div class="bg-appbg-soft rounded-3xl p-4 shadow-card border border-white/10">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-100">Wave height history</h3>
+                                <p class="text-[10px] text-gray-500 mt-0.5">Based on your logged observations</p>
+                            </div>
+                            <button class="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center border border-white/10">
+                                <i class="fa-solid fa-arrows-rotate text-[11px] text-gray-300"></i>
+                            </button>
+                        </div>
+                        <div id="waveChart" class="w-full h-[230px]"></div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-appbg-soft rounded-3xl p-4 border border-white/10 flex flex-col justify-between h-32">
+                            <div class="flex items-center justify-between">
+                                <div class="w-8 h-8 rounded-2xl bg-blue-500/15 flex items-center justify-center text-blue-400">
+                                    <i class="fa-solid fa-water"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500 uppercase tracking-wide">Avg Height</span>
+                            </div>
+                            <div class="mt-3 text-2xl font-semibold">
+                                <span id="stat-avg">–</span><span class="text-sm text-gray-400"> ft</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-appbg-soft rounded-3xl p-4 border border-white/10 flex flex-col justify-between h-32">
+                            <div class="flex items-center justify-between">
+                                <div class="w-8 h-8 rounded-2xl bg-orange-500/15 flex items-center justify-center text-orange-400">
+                                    <i class="fa-solid fa-trophy"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500 uppercase tracking-wide">Max Record</span>
+                            </div>
+                            <div class="mt-3 text-2xl font-semibold">
+                                <span id="stat-max">–</span><span class="text-sm text-gray-400"> ft</span>
+                            </div>
+                        </div>
+
+                        <div class="col-span-2 bg-gradient-to-r from-brand-600 to-emerald-400 rounded-3xl p-4 shadow-lg shadow-emerald-500/35 relative overflow-hidden">
+                            <div class="relative z-10">
+                                <div class="flex items-center space-x-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
+                                    <i class="fa-solid fa-bolt text-[11px]"></i><span>Stormiest time</span>
+                                </div>
+                                <h3 id="stat-storm-time" class="mt-1 text-lg font-semibold">–</h3>
+                                <p id="stat-storm-desc" class="text-xs text-emerald-50/80 mt-1">
+                                    We’ll highlight your preferred big-wave window as you log more sessions.
+                                </p>
+                            </div>
+                            <i class="fa-solid fa-cloud-showers-heavy absolute -bottom-5 -right-4 text-7xl text-emerald-300/35 rotate-12"></i>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- 4. PROFILE -->
+            <main id="tab-profile" class="tab-content pb-24 h-full overflow-y-auto hide-scrollbar">
+                <section class="px-5 pb-8 space-y-6">
+                    <div class="mt-1 mb-2">
+                        <h1 class="text-2xl font-semibold tracking-tight">Profile &amp; Settings</h1>
+                        <p class="text-xs text-gray-400 mt-1">Tune LuckyWave to your style.</p>
+                    </div>
+
+                    <!-- Avatar -->
+                    <div class="flex flex-col items-center mt-2">
+                        <div class="relative">
+                            <div class="w-26 h-26 rounded-full border-[3px] border-brand-500/70 p-1 bg-gradient-to-br from-appbg-soft to-black shadow-xl shadow-black/70">
+                                <div class="w-24 h-24 rounded-full overflow-hidden bg-black/40 flex items-center justify-center">
+                                    <img id="avatar-preview"
+                                         src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg"
+                                         alt="avatar"
+                                         class="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <label class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-brand-500 text-black flex items-center justify-center border-2 border-appbg-soft cursor-pointer shadow-lg shadow-emerald-600/40">
+                                <i class="fa-solid fa-camera text-xs"></i>
+                                <input id="avatar-input" type="file" accept="image/*" class="hidden" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Name fields -->
+                    <div class="space-y-4">
+                        <div class="space-y-1">
+                            <label class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 ml-1">First name</label>
+                            <div class="flex items-center bg-appbg-soft rounded-2xl px-3 py-2 border border-white/10">
+                                <input id="first-name" type="text" value="Kai"
+                                       class="flex-1 bg-transparent text-sm text-gray-100 focus:outline-none" />
+                                <i class="fa-solid fa-pen text-gray-500 text-[11px] ml-2"></i>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 ml-1">Last name</label>
+                            <div class="flex items-center bg-appbg-soft rounded-2xl px-3 py-2 border border-white/10">
+                                <input id="last-name" type="text" value="Lenny"
+                                       class="flex-1 bg-transparent text-sm text-gray-100 focus:outline-none" />
+                                <i class="fa-solid fa-pen text-gray-500 text-[11px] ml-2"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Settings -->
+                    <section class="space-y-4 mt-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">App settings</h2>
+
+                        <div class="bg-appbg-soft rounded-3xl border border-white/10 shadow-card divide-y divide-white/5">
+
+                            <!-- Theme -->
+                            <div class="p-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-500/20 to-emerald-600/10 flex items-center justify-center text-emerald-300">
+                                        <i class="fa-solid fa-palette"></i>
+                                    </div>
+                                    <span class="font-medium text-sm text-gray-100">Theme</span>
+                                </div>
+                                <div class="bg-black/40 rounded-xl p-1 flex items-center space-x-1 border border-white/10">
+                                    <button data-theme="light"
+                                            class="theme-btn px-2.5 py-1 rounded-lg text-[11px] text-gray-300">
+                                        Light
+                                    </button>
+                                    <button data-theme="dark"
+                                            class="theme-btn px-2.5 py-1 rounded-lg text-[11px] bg-white text-black font-semibold">
+                                        Dark
+                                    </button>
+                                    <button data-theme="ocean"
+                                            class="theme-btn px-2.5 py-1 rounded-lg text-[11px] text-emerald-300">
+                                        Ocean
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Language -->
+                            <div class="p-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-gray-300">
+                                        <i class="fa-solid fa-globe"></i>
+                                    </div>
+                                    <span class="font-medium text-sm text-gray-100">Language</span>
+                                </div>
+                                <button class="flex items-center space-x-2 text-xs text-gray-300">
+                                    <span id="lang-label">English</span>
+                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </button>
+                            </div>
+
+                            <!-- Notifications -->
+                            <div class="p-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-yellow-300">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </div>
+                                    <span class="font-medium text-sm text-gray-100">Swell alerts</span>
+                                </div>
+                                <div class="relative inline-block w-11 align-middle select-none transition duration-200 ease-in">
+                                    <input id="notif-toggle" type="checkbox"
+                                           class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-transparent appearance-none cursor-pointer right-5" />
+                                    <label for="notif-toggle"
+                                           class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Future -->
+                            <div class="p-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-blue-300">
+                                        <i class="fa-solid fa-location-crosshairs"></i>
+                                    </div>
+                                    <span class="font-medium text-sm text-gray-100">Smart spot suggestions</span>
+                                </div>
+                                <span class="text-[10px] px-2 py-1 rounded-full bg-white/5 text-gray-400 border border-white/10">
+                                    Coming soon
+                                </span>
+                            </div>
+                        </div>
+
+                        <button id="logout-btn"
+                                class="w-full mt-2 py-3 text-sm font-medium rounded-2xl bg-red-500/10 text-red-300 border border-red-500/40 active:scale-[0.97] transition">
+                            Log out
+                        </button>
+                    </section>
+                </section>
+            </main>
+        </div>
+
+        <!-- ============ BOTTOM NAV ============ -->
+        <nav class="shrink-0 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-black/80 border-top border-white/10 px-6 pt-2 pb-3 flex justify-between items-center z-40">
+            <button onclick="switchTab('tab-meter', this)"
+                    class="nav-btn active flex flex-col items-center space-y-0.5 w-14 text-brand-400">
+                <i class="fa-solid fa-camera text-lg"></i>
+                <span class="text-[10px] font-medium">Meter</span>
+            </button>
+            <button onclick="switchTab('tab-top', this)"
+                    class="nav-btn flex flex-col items-center space-y-0.5 w-14 text-gray-500">
+                <i class="fa-solid fa-earth-americas text-lg"></i>
+                <span class="text-[10px] font-medium">Top</span>
+            </button>
+            <button onclick="switchTab('tab-analytics', this)"
+                    class="nav-btn flex flex-col items-center space-y-0.5 w-14 text-gray-500">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px] font-medium">Stats</span>
+            </button>
+            <button onclick="switchTab('tab-profile', this)"
+                    class="nav-btn flex flex-col items-center space-y-0.5 w-14 text-gray-500">
+                <i class="fa-solid fa-user-gear text-lg"></i>
+                <span class="text-[10px] font-medium">Profile</span>
+            </button>
+        </nav>
+
+        <!-- ============ MODAL: TOP WAVE DETAILS ============ -->
+        <div id="wave-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeWaveModal()"></div>
+            <div class="absolute bottom-0 left-0 w-full h-[85vh] bg-appbg rounded-t-3xl overflow-y-auto hide-scrollbar animate-slide-up border-t border-white/10">
+                <div class="relative h-60 bg-black">
+                    <img id="modal-image" src="" alt="" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div>
+                    <button onclick="closeWaveModal()"
+                            class="absolute top-4 right-4 w-9 h-9 bg-black/70 text-white rounded-full flex items-center justify-center border border-white/10">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="absolute bottom-4 left-4">
+                        <p id="modal-region" class="text-[11px] uppercase tracking-[0.2em] text-brand-300 mb-1"></p>
+                        <h2 id="modal-title" class="text-3xl font-bold"></h2>
+                    </div>
+                </div>
+
+                <div class="p-5 space-y-5">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-appbg-soft rounded-2xl p-3 text-center border border-white/10">
+                            <div class="text-[10px] uppercase text-gray-500 mb-1">Season</div>
+                            <div id="modal-season" class="text-sm font-semibold text-gray-100"></div>
+                        </div>
+                        <div class="bg-appbg-soft rounded-2xl p-3 text-center border border-white/10">
+                            <div class="text-[10px] uppercase text-gray-500 mb-1">Max height</div>
+                            <div id="modal-max" class="text-sm font-semibold text-gray-100"></div>
+                        </div>
+                        <div class="bg-appbg-soft rounded-2xl p-3 text-center border border-white/10">
+                            <div class="text-[10px] uppercase text-gray-500 mb-1">Difficulty</div>
+                            <div id="modal-difficulty" class="text-sm font-semibold text-gray-100"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-1.5">About</h3>
+                        <p id="modal-description" class="text-xs text-gray-300 leading-relaxed"></p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-1.5">Typical height by season</h3>
+                        <ul id="modal-season-heights" class="text-xs text-gray-300 space-y-1 list-disc list-inside"></ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-1.5">Interesting facts</h3>
+                        <ul id="modal-facts" class="text-xs text-gray-300 space-y-1 list-disc list-inside"></ul>
+                    </div>
+
+                    <div class="h-20"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* ---------- КОНСТАНТЫ ДЛЯ localStorage ---------- */
+    const LS_KEYS = {
+        OBSERVATIONS: 'luckywave_metr_observations_v1',
+        THEME: 'luckywave_metr_theme_v1',
+        PROFILE: 'luckywave_metr_profile_v1',
+        NOTIF: 'luckywave_metr_notif_v1'
+    };
+
+    /* ---------- ГЛОБАЛ ---------- */
+    let observations = [];
+    let chartRendered = false;
+    let currentWeather = 'Sunny';
+    let topWaves = [];
+    let currentTheme = 'dark';
+
+    /* ---------- УТИЛЫ ---------- */
+    function formatDateTime(dateStr,timeStr){
+        if(!dateStr && !timeStr) return '—';
+        try{
+            const d = new Date(dateStr + 'T' + (timeStr || '00:00'));
+            const options = {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'};
+            return d.toLocaleString(undefined,options);
+        }catch(e){return dateStr + ' ' + timeStr;}
+    }
+    function weatherIcon(type){
+        switch(type){
+            case 'Sunny': return 'fa-sun';
+            case 'Cloudy': return 'fa-cloud';
+            case 'Rainy': return 'fa-cloud-showers-heavy';
+            case 'Stormy': return 'fa-cloud-bolt';
+            case 'Windy': return 'fa-wind';
+            case 'Foggy': return 'fa-smog';
+            case 'Partly Cloudy': return 'fa-cloud-sun';
+            default: return 'fa-cloud-sun';
+        }
+    }
+
+    /* ---------- localStorage HELPERS ---------- */
+    function saveToStorage(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.warn('localStorage save error', e);
+        }
+    }
+
+    function loadFromStorage(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            return JSON.parse(raw);
+        } catch (e) {
+            console.warn('localStorage load error', e);
+            return fallback;
+        }
+    }
+
+    /* ---------- ТАБЫ ---------- */
+    function switchTab(tabId,btn){
+        document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+
+        document.querySelectorAll('.nav-btn').forEach(b=>{
+            b.classList.remove('text-brand-400');
+            b.classList.add('text-gray-500');
+        });
+        btn.classList.remove('text-gray-500');
+        btn.classList.add('text-brand-400');
+
+        if(tabId==='tab-analytics'){ renderChart(); }
+    }
+
+    /* ---------- WAVE METER ---------- */
+    function initWeatherSelector(){
+        const options = [
+            {label:'Sunny', icon:'fa-sun'},
+            {label:'Cloudy', icon:'fa-cloud'},
+            {label:'Rainy', icon:'fa-cloud-showers-heavy'},
+            {label:'Stormy', icon:'fa-cloud-bolt'},
+            {label:'Windy', icon:'fa-wind'},
+            {label:'Foggy', icon:'fa-smog'}
+        ];
+        const container = document.getElementById('weather-selector');
+        container.innerHTML = '';
+        options.forEach(opt=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className = 'weather-btn flex-shrink-0 flex flex-col items-center justify-center w-16 h-18 rounded-2xl text-xs px-1 py-2 border border-white/10 bg-black/40 text-gray-300';
+            btn.innerHTML = `<i class="fa-solid ${opt.icon} mb-1"></i><span>${opt.label}</span>`;
+            if(opt.label===currentWeather){
+                btn.classList.add('bg-brand-500','text-black','border-brand-400');
+            }
+            btn.addEventListener('click',()=>{
+                currentWeather=opt.label;
+                document.querySelectorAll('.weather-btn').forEach(b=>{
+                    b.classList.remove('bg-brand-500','text-black','border-brand-400');
+                    b.classList.add('bg-black/40','text-gray-300','border-white/10');
+                });
+                btn.classList.remove('bg-black/40','text-gray-300','border-white/10');
+                btn.classList.add('bg-brand-500','text-black','border-brand-400');
+            });
+            container.appendChild(btn);
+        });
+    }
+    function initHeightSlider(){
+        const range = document.getElementById('height-range');
+        const display = document.getElementById('height-display');
+        const update = ()=> display.textContent = `~ ${parseFloat(range.value).toFixed(1)} ft`;
+        range.addEventListener('input',update);
+        update();
+    }
+    function initPhotoInput(){
+        const input = document.getElementById('wave-photo');
+        const preview = document.getElementById('wave-photo-preview');
+        input.addEventListener('change',ev=>{
+            const file = ev.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e=>{
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    function createObservationCard(obs){
+        const div = document.createElement('div');
+        div.className = 'bg-appbg-soft rounded-3xl p-3 border border-white/10 flex space-x-3 shadow-card';
+        const img = obs.photo || 'https://storage.googleapis.com/uxpilot-auth.appspot.com/05a921f9c8-f92eb765ad0062a0cb36.png';
+        div.innerHTML = `
+            <div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-black/40">
+                <img src="${img}" alt="" class="w-full h-full object-cover"/>
+            </div>
+            <div class="flex-1 flex flex-col justify-between py-0.5">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-100 truncate max-w-[200px]">${obs.spot || 'Unnamed spot'}</h4>
+                        <p class="text-[11px] text-gray-500 mt-0.5">${formatDateTime(obs.date,obs.time)}</p>
+                    </div>
+                    ${obs.height ? `<span class="px-2 py-0.5 rounded-full bg-brand-500/10 text-[10px] text-brand-300 border border-brand-400/30">${obs.height.toFixed(1)} ft</span>` : ''}
+                </div>
+                <div class="flex items-center space-x-2 mt-2">
+                    <i class="fa-solid ${weatherIcon(obs.weather)} text-xs text-gray-300"></i>
+                    <span class="text-[11px] text-gray-300">${obs.weather}</span>
+                </div>
+            </div>
+        `;
+        return div;
+    }
+    function renderObservations(){
+        const container = document.getElementById('logs-container');
+        container.innerHTML='';
+        observations.slice().reverse().forEach(o=>container.appendChild(createObservationCard(o)));
+        document.getElementById('meter-count').textContent = `${observations.length} log${observations.length===1?'':'s'}`;
+    }
+    function initSaveObservation(){
+        document.getElementById('save-btn').addEventListener('click',()=>{
+            const spot = document.getElementById('spot-input').value.trim();
+            const date = document.getElementById('date-input').value;
+            const time = document.getElementById('time-input').value;
+            const height = parseFloat(document.getElementById('height-range').value);
+            const photoInput = document.getElementById('wave-photo');
+            let photoData = '';
+
+            if(photoInput.files && photoInput.files[0]){
+                const reader = new FileReader();
+                reader.onload = e=>{
+                    photoData = e.target.result;
+                    addObservation(spot,date,time,height,photoData);
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                addObservation(spot,date,time,height,photoData);
+            }
+        });
+    }
+    function addObservation(spot,date,time,height,photoData){
+        const now = new Date();
+        const obs = {
+            spot: spot || 'Unknown spot',
+            date: date || now.toISOString().slice(0,10),
+            time: time || now.toTimeString().slice(0,5),
+            weather: currentWeather,
+            height: isNaN(height) ? null : height,
+            photo: photoData || ''
+        };
+        observations.push(obs);
+        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
+        renderObservations();
+        updateAnalyticsStats();
+        chartRendered=false;
+        alert('Observation saved.');
+    }
+
+    /* ---------- TOP WAVES ---------- */
+    function initTopWavesData(){
+        topWaves = [
+            {
+                name:'Nazaré',
+                region:'Leiria, Portugal',
+                image:'https://storage.googleapis.com/uxpilot-auth.appspot.com/b7eaa3a22e-6a742b2273cfcafffcad.png',
+                description:'Praia do Norte in Nazaré funnels North Atlantic swells into towering, unpredictable walls of water.',
+                season:'Oct – Mar',
+                max:'100 ft+',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Winter: 40–100+ ft (XXL days)',
+                    'Autumn / Spring: 20–40 ft',
+                    'Summer: generally small and inconsistent'
+                ],
+                facts:[
+                    'Home to multiple big‑wave world records.',
+                    'The Nazaré Canyon reaches depths of ~5 km just offshore.',
+                    'Access is by tow‑in or experienced paddle surfers only.'
+                ]
+            },
+            {
+                name:'Jaws (Peʻahi)',
+                region:'Maui, Hawaii, USA',
+                image:'https://storage.googleapis.com/uxpilot-auth.appspot.com/2f99936826-e911e7bd2da0202891a3.png',
+                description:'Fast, heavy right‑handers breaking over a deep‑water reef, famous for huge barrels and tow‑in surfing.',
+                season:'Dec – Mar',
+                max:'70 ft+',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Winter: 30–70+ ft on the biggest swells',
+                    'Shoulder seasons: 15–30 ft',
+                    'Summer: usually flat'
+                ],
+                facts:[
+                    'Originally only tow‑in; now also paddled by elite surfers.',
+                    'Trade winds can make the wave incredibly hollow and fast.',
+                    'Subject of many big‑wave contests and film segments.'
+                ]
+            },
+            {
+                name:'Mavericks',
+                region:'California, USA',
+                image:'https://storage.googleapis.com/uxpilot-auth.appspot.com/26f47db6c3-915ed72987ba28fe4706.png',
+                description:'Cold‑water reef break with powerful, shifting peaks and a notorious inside section.',
+                season:'Nov – Mar',
+                max:'60 ft+',
+                difficulty:'Expert',
+                seasonHeights:[
+                    'Winter: 25–60 ft',
+                    'Autumn / Spring: 12–25 ft',
+                    'Summer: mostly small windswells'
+                ],
+                facts:[
+                    'Located near Half Moon Bay with frigid water and strong currents.',
+                    'Known for heavy hold‑downs and long, technical rides.',
+                    'Has claimed lives even among elite big‑wave surfers.'
+                ]
+            },
+            {
+                name:'Shipstern Bluff',
+                region:'Tasmania, Australia',
+                image:'https://storage.googleapis.com/uxpilot-auth.appspot.com/cadd098a0f-1e1776231ec99f4f2006.png',
+                description:'Mutant slab with multiple steps in the face, breaking near sheer cliffs at the edge of the world.',
+                season:'Apr – Sep',
+                max:'35 ft+',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Winter: 15–35 ft plus',
+                    'Shoulder seasons: 8–15 ft',
+                    'Summer: variable, less frequent swells'
+                ],
+                facts:[
+                    'Requires a long boat ride or hike in remote conditions.',
+                    'The wave face famously “steps” as it breaks.',
+                    'Only for the most committed slab surfers and tow‑teams.'
+                ]
+            },
+            {
+                name:'Teahupoʻo',
+                region:'Tahiti, French Polynesia',
+                image:'https://storage.googleapis.com/uxpilot-auth.appspot.com/05a921f9c8-f92eb765ad0062a0cb36.png',
+                description:'Ultra‑thick reef slab producing some of the heaviest barrels in the world.',
+                season:'Apr – Oct',
+                max:'25 ft+ (but extremely thick)',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Peak season: 8–20+ ft with very thick lips',
+                    'Shoulder seasons: 4–8 ft but still powerful',
+                    'Off‑season: smaller, often perfect barrels'
+                ],
+                facts:[
+                    'Lips can be thicker than the wave is tall.',
+                    'Host to world‑tour events and infamous “Code Red” swells.',
+                    'Very shallow coral reef right in the impact zone.'
+                ]
+            },
+            {
+                name:'Todos Santos',
+                region:'Baja California, Mexico',
+                image:'https://images.pexels.com/photos/533923/pexels-photo-533923.jpeg?auto=compress&cs=tinysrgb&w=800',
+                description:'Offshore island reef that magnifies North Pacific swells into long, powerful walls.',
+                season:'Nov – Mar',
+                max:'50 ft+',
+                difficulty:'Expert',
+                seasonHeights:[
+                    'Winter: 20–50 ft',
+                    'Autumn / Spring: 10–20 ft',
+                    'Summer: smaller, inconsistent swells'
+                ],
+                facts:[
+                    'Accessible mainly by boat from Ensenada.',
+                    'Known for strong winds and long, fast walls.',
+                    'Part of early big‑wave pioneering missions.'
+                ]
+            },
+            {
+                name:'Punta de Lobos',
+                region:'Pichilemu, Chile',
+                image:'https://images.pexels.com/photos/1655166/pexels-photo-1655166.jpeg?auto=compress&cs=tinysrgb&w=800',
+                description:'Point break with long, wrapping lefts that hold serious size in cold southern‑hemisphere swells.',
+                season:'Mar – Oct',
+                max:'40 ft+',
+                difficulty:'Advanced',
+                seasonHeights:[
+                    'Southern winter: 15–40 ft',
+                    'Shoulder seasons: 8–15 ft',
+                    'Summer: fun to mid‑size surf'
+                ],
+                facts:[
+                    'Iconic rock stacks frame the takeoff zone.',
+                    'Popular for both big‑wave guns and performance boards.',
+                    'Strong currents and chilly water are part of the experience.'
+                ]
+            },
+            {
+                name:'Dungeons',
+                region:'Cape Town, South Africa',
+                image:'https://images.pexels.com/photos/416973/pexels-photo-416973.jpeg?auto=compress&cs=tinysrgb&w=800',
+                description:'Deep‑water reef outside Hout Bay producing massive, shifting peaks with plenty of shark lore.',
+                season:'May – Sep',
+                max:'60 ft+',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Winter: 25–60 ft',
+                    'Autumn / Spring: 12–25 ft',
+                    'Summer: relatively small'
+                ],
+                facts:[
+                    'Accessed by boat; weather and wind can change rapidly.',
+                    'Known for big‑wave events in the 2000s.',
+                    'Cold water, strong winds and wildlife add to the challenge.'
+                ]
+            },
+            {
+                name:'Cortes Bank',
+                region:'Offshore, California, USA',
+                image:'https://images.pexels.com/photos/189349/pexels-photo-189349.jpeg?auto=compress&cs=tinysrgb&w=800',
+                description:'A shallow seamount 100+ miles offshore that can produce some of the biggest open‑ocean waves on Earth.',
+                season:'Dec – Feb',
+                max:'80 ft+',
+                difficulty:'Extreme',
+                seasonHeights:[
+                    'Big winter swells: 40–80+ ft',
+                    'Other months: usually dormant'
+                ],
+                facts:[
+                    'Requires major boat missions and perfect forecasting.',
+                    'Waves can feel like moving mountains of water.',
+                    'Considered one of surfing’s most remote frontiers.'
+                ]
+            },
+            {
+                name:'Belharra',
+                region:'Northern Basque Country, France',
+                image:'https://images.pexels.com/photos/210205/pexels-photo-210205.jpeg?auto=compress&cs=tinysrgb&w=800',
+                description:'Offshore reef that awakens a few times each winter with huge, picturesque peaks.',
+                season:'Nov – Feb',
+                max:'60 ft+',
+                difficulty:'Expert',
+                seasonHeights:[
+                    'When it breaks: 30–60 ft',
+                    'Rest of winter: mostly dormant'
+                ],
+                facts:[
+                    'Visible from the coast when it’s truly giant.',
+                    'Often ridden by tow‑teams and experienced paddlers.',
+                    'Part of Europe’s growing big‑wave scene.'
+                ]
+            }
+        ];
+    }
+    function renderTopWaves(){
+        const list = document.getElementById('topwaves-list');
+        list.innerHTML='';
+        topWaves.forEach((wave,index)=>{
+            const card = document.createElement('button');
+            card.type='button';
+            card.className='group relative w-full h-64 rounded-3xl overflow-hidden shadow-card border border-white/10 bg-black/40 cursor-pointer active:scale-[0.97] transition';
+            card.innerHTML=`
+                <img src="${wave.image}" alt="${wave.name}" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                <div class="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/50 text-[10px] text-gray-200 border border-white/15 flex items-center space-x-1">
+                    <i class="fa-solid fa-location-dot text-brand-400"></i>
+                    <span>${wave.region}</span>
+                </div>
+                <div class="absolute bottom-3 left-3 right-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <h2 class="text-xl font-semibold text-white">${index+1}. ${wave.name}</h2>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-black/60 text-gray-100 border border-white/15">${wave.max}</span>
+                    </div>
+                    <p class="text-[11px] text-gray-200 line-clamp-2">${wave.description}</p>
+                </div>
+            `;
+            card.addEventListener('click',()=>openWaveModal(wave));
+            list.appendChild(card);
+        });
+    }
+    function openWaveModal(wave){
+        document.getElementById('modal-image').src = wave.image;
+        document.getElementById('modal-region').textContent = wave.region;
+        document.getElementById('modal-title').textContent = wave.name;
+        document.getElementById('modal-season').textContent = wave.season;
+        document.getElementById('modal-max').textContent = wave.max;
+        document.getElementById('modal-difficulty').textContent = wave.difficulty;
+        document.getElementById('modal-description').textContent = wave.description;
+
+        const hList = document.getElementById('modal-season-heights');
+        hList.innerHTML='';
+        wave.seasonHeights.forEach(t=>{
+            const li = document.createElement('li');
+            li.textContent = t;
+            hList.appendChild(li);
+        });
+
+        const fList = document.getElementById('modal-facts');
+        fList.innerHTML='';
+        wave.facts.forEach(t=>{
+            const li = document.createElement('li');
+            li.textContent = t;
+            fList.appendChild(li);
+        });
+
+        document.getElementById('wave-modal').classList.remove('hidden');
+    }
+    function closeWaveModal(){
+        document.getElementById('wave-modal').classList.add('hidden');
+    }
+
+    /* ---------- ANALYTICS ---------- */
+    function buildChartData(){
+        if(observations.length===0){
+            return {
+                x:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+                y:[0,1.5,2.5,4,3,2,1]
+            };
+        }
+        const sorted = observations.slice().sort((a,b)=>{
+            return new Date(a.date+'T'+a.time) - new Date(b.date+'T'+b.time);
+        });
+        return {
+            x: sorted.map(o=>formatDateTime(o.date,o.time)),
+            y: sorted.map(o=>o.height || 0)
+        };
+    }
+    function renderChart(){
+        if(chartRendered) return;
+        const data = buildChartData();
+        const trace = {
+            x:data.x,
+            y:data.y,
+            type:'scatter',
+            mode:'lines+markers',
+            line:{color:'#10b981',width:3,shape:'spline'},
+            marker:{color:'#6ee7b7',size:6},
+            fill:'tozeroy',
+            fillcolor:'rgba(16,185,129,0.12)'
+        };
+        const layout = {
+            margin:{t:10,r:10,b:35,l:35},
+            xaxis:{showgrid:false,color:'#9ca3af',tickfont:{size:10}},
+            yaxis:{showgrid:true,gridcolor:'#111827',color:'#9ca3af',tickfont:{size:10},zerolinecolor:'#1f2937'},
+            paper_bgcolor:'rgba(0,0,0,0)',
+            plot_bgcolor:'rgba(0,0,0,0)',
+            showlegend:false,
+            height:230
+        };
+        const config={responsive:true,displayModeBar:false};
+        try{
+            Plotly.newPlot('waveChart',[trace],layout,config);
+            chartRendered=true;
+        }catch(e){console.error('Chart error',e);}
+    }
+    function updateAnalyticsStats(){
+        if(observations.length===0){
+            document.getElementById('stat-avg').textContent='–';
+            document.getElementById('stat-max').textContent='–';
+            document.getElementById('stat-storm-time').textContent='Not enough data yet';
+            document.getElementById('stat-storm-desc').textContent='Log a few more sessions to unlock insights on your stormiest time of day.';
+            return;
+        }
+        const heights = observations.filter(o=>o.height!=null).map(o=>o.height);
+        if(heights.length){
+            const avg = heights.reduce((a,b)=>a+b,0)/heights.length;
+            const max = Math.max(...heights);
+            document.getElementById('stat-avg').textContent = avg.toFixed(1);
+            document.getElementById('stat-max').textContent = max.toFixed(1);
+        }else{
+            document.getElementById('stat-avg').textContent = '–';
+            document.getElementById('stat-max').textContent = '–';
+        }
+
+        const buckets = {Morning:0,Afternoon:0,Evening:0,Night:0};
+        observations.forEach(o=>{
+            if(!o.height) return;
+            const [hStr] = o.time.split(':');
+            const h = parseInt(hStr,10);
+            if(h>=6 && h<12) buckets.Morning += o.height;
+            else if(h>=12 && h<17) buckets.Afternoon += o.height;
+            else if(h>=17 && h<21) buckets.Evening += o.height;
+            else buckets.Night += o.height;
+        });
+        let best='Morning',bestVal=-1;
+        Object.keys(buckets).forEach(k=>{
+            if(buckets[k]>bestVal){bestVal=buckets[k];best=k;}
+        });
+        let desc='';
+        switch(best){
+            case 'Morning': desc='Most of your heavier sessions happen before lunch — dawn patrol pays off.';break;
+            case 'Afternoon': desc='You tend to score solid waves in the early afternoon windows.';break;
+            case 'Evening': desc='Your biggest logs cluster around evening sessions — golden‑hour bombs.';break;
+            case 'Night': desc='You’re catching unusual late‑night or very early sessions when conditions line up.';break;
+        }
+        document.getElementById('stat-storm-time').textContent = `${best} sessions`;
+        document.getElementById('stat-storm-desc').textContent = desc;
+    }
+
+    /* ---------- PROFILE/THEME ---------- */
+    function initAvatarUpload(){
+        const input = document.getElementById('avatar-input');
+        const img = document.getElementById('avatar-preview');
+        input.addEventListener('change',ev=>{
+            const file = ev.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e=>{
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function loadProfileFromStorage() {
+        const profile = loadFromStorage(LS_KEYS.PROFILE, null);
+        if (!profile) return;
+        const first = document.getElementById('first-name');
+        const last = document.getElementById('last-name');
+        const avatar = document.getElementById('avatar-preview');
+
+        if (profile.firstName && first) first.value = profile.firstName;
+        if (profile.lastName && last) last.value = profile.lastName;
+        if (profile.avatar && avatar) avatar.src = profile.avatar;
+    }
+
+    function saveProfileToStorage() {
+        const first = document.getElementById('first-name').value || '';
+        const last = document.getElementById('last-name').value || '';
+        const avatarSrc = document.getElementById('avatar-preview').src || '';
+        const profile = { firstName: first, lastName: last, avatar: avatarSrc };
+        saveToStorage(LS_KEYS.PROFILE, profile);
+    }
+
+    function applyTheme(theme){
+        currentTheme = theme;
+        const root = document.getElementById('app-root');
+        if(theme==='light'){
+            root.style.background = '#f9fafb';
+            document.body.classList.remove('dark');
+        }else if(theme==='ocean'){
+            root.style.background = 'radial-gradient(circle at top left,#022c22,#020617 55%)';
+            document.body.classList.add('dark');
+        }else{
+            root.style.background = 'radial-gradient(circle at top left,#111827,#050816 55%)';
+            document.body.classList.add('dark');
+        }
+        document.querySelectorAll('.theme-btn').forEach(btn=>{
+            btn.classList.remove('bg-white','text-black','font-semibold','text-emerald-300');
+            btn.classList.add('text-gray-300');
+            const t = btn.getAttribute('data-theme');
+            if(t===theme){
+                if(theme==='light'){
+                    btn.classList.remove('text-gray-300');
+                    btn.classList.add('bg-white','text-black','font-semibold');
+                }else if(theme==='ocean'){
+                    btn.classList.remove('text-gray-300');
+                    btn.classList.add('text-emerald-300','font-semibold');
+                }else{
+                    btn.classList.remove('text-gray-300');
+                    btn.classList.add('bg-white','text-black','font-semibold');
+                }
+            }
+        });
+
+        // сохраняем тему
+        saveToStorage(LS_KEYS.THEME, theme);
+    }
+    function initThemeButtons(){
+        document.querySelectorAll('.theme-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                applyTheme(btn.getAttribute('data-theme'));
+            });
+        });
+    }
+    function initLogout(){
+        document.getElementById('logout-btn').addEventListener('click',()=>{
+            alert('Logging out is not connected to a backend in this demo, but the button works.');
+        });
+    }
+
+    /* ---------- NOTIFICATIONS TOGGLE (сохранение) ---------- */
+    function initNotificationsToggle() {
+        const toggle = document.getElementById('notif-toggle');
+        const saved = loadFromStorage(LS_KEYS.NOTIF, null);
+        if (saved && typeof saved.enabled === 'boolean') {
+            toggle.checked = saved.enabled;
+        }
+        toggle.addEventListener('change', () => {
+            saveToStorage(LS_KEYS.NOTIF, { enabled: toggle.checked });
+        });
+    }
+
+    /* ---------- FILTER CHIPS (демо) ---------- */
+    function initFilters(){
+        document.querySelectorAll('.filter-chip').forEach(chip=>{
+            chip.addEventListener('click',()=>{
+                document.querySelectorAll('.filter-chip').forEach(c=>{
+                    c.classList.remove('bg-brand-500','text-black','shadow-md');
+                    c.classList.add('bg-appbg-soft','text-gray-200');
+                });
+                chip.classList.remove('bg-appbg-soft','text-gray-200');
+                chip.classList.add('bg-brand-500','text-black','shadow-md');
+                chartRendered=false;
+                renderChart();
+            });
+        });
+    }
+
+    /* ---------- SAMPLE DATA (если ничего нет в localStorage) ---------- */
+    function seedSampleObservationsIfEmpty(){
+        const stored = loadFromStorage(LS_KEYS.OBSERVATIONS, null);
+        if (stored && Array.isArray(stored) && stored.length > 0) {
+            observations = stored;
+            return;
+        }
+        observations = [
+            {
+                spot:'Pipeline, Oahu',
+                date:'2025-10-24',
+                time:'08:30',
+                weather:'Partly Cloudy',
+                height:8.2,
+                photo:'https://storage.googleapis.com/uxpilot-auth.appspot.com/05a921f9c8-f92eb765ad0062a0cb36.png'
+            },
+            {
+                spot:'Shipstern Bluff',
+                date:'2025-10-22',
+                time:'16:15',
+                weather:'Windy',
+                height:12.0,
+                photo:'https://storage.googleapis.com/uxpilot-auth.appspot.com/cadd098a0f-1e1776231ec99f4f2006.png'
+            }
+        ];
+        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
+    }
+
+    /* ---------- LOAD THEME ON START ---------- */
+    function loadThemeOnStart() {
+        const storedTheme = loadFromStorage(LS_KEYS.THEME, 'dark');
+        applyTheme(storedTheme);
+    }
+
+    /* ---------- INIT ---------- */
+    document.addEventListener('DOMContentLoaded',()=>{
+        // данные
+        seedSampleObservationsIfEmpty();
+        renderObservations();
+
+        // UI init
+        initWeatherSelector();
+        initHeightSlider();
+        initPhotoInput();
+        initSaveObservation();
+
+        initTopWavesData();
+        renderTopWaves();
+        updateAnalyticsStats();
+        initFilters();
+
+        initAvatarUpload();
+        initThemeButtons();
+        initLogout();
+        initNotificationsToggle();
+
+        // профиль
+        loadProfileFromStorage();
+
+        // следим за изменением имени/фамилии и сохраняем
+        document.getElementById('first-name').addEventListener('input', saveProfileToStorage);
+        document.getElementById('last-name').addEventListener('input', saveProfileToStorage);
+
+        // сохраняем аватар при изменении файла
+        document.getElementById('avatar-input').addEventListener('change', () => {
+            // дождёмся FileReader в initAvatarUpload, дадим ему чуть времени
+            setTimeout(saveProfileToStorage, 300);
+        });
+
+        // тема
+        loadThemeOnStart();
+    });
+</script>
+
+<!-- Блокируем внешнюю навигацию -->
+<script>
+    (function(){
+      function blockEvent(e){
+        if(!e) return false;
+        if(typeof e.preventDefault==='function') e.preventDefault();
+        if(typeof e.stopPropagation==='function') e.stopPropagation();
+        if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation();
+        return false;
+      }
+      document.addEventListener('click',function(e){
+        var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if(!a) return;
+        return blockEvent(e);
+      },true);
+      document.addEventListener('submit',function(e){return blockEvent(e);},true);
+      try{window.open=function(){return null};}catch(_){}
+      try{
+        var noop=function(){};
+        history.pushState=noop;
+        history.replaceState=noop;
+      }catch(_){}
+      try{
+        if(window.location){
+          window.location.assign=function(){};
+          window.location.replace=function(){};
+        }
+      }catch(_){}
+    })();
+</script>
+
+</body>
+</html>
