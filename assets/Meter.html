@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8" />
     <title>LuckyWave Metr</title>
-    <!-- Полный экран на iPhone / iPad, с учётом вырезов -->
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
@@ -52,7 +51,6 @@
 
     <style>
         :root {
-            /* Safe area (iPhone/iPad с вырезами) */
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
             --safe-left: env(safe-area-inset-left);
@@ -87,7 +85,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ========= ГЛАВНЫЙ ФУЛЛСКРИН ДЛЯ IPAD/IPHONE ========= */
         #app-root {
             position: fixed;
             inset: 0;
@@ -103,11 +100,6 @@
             align-items: stretch;
         }
 
-        /*
-           На iPad планшете экран шире, поэтому:
-           - по умолчанию: max-width для "телефона"
-           - для iPad (>= 768px): убираем max-width => растягиваем на всю ширину
-        */
         #app-wrapper {
             width: 100%;
             max-width: 480px;
@@ -121,20 +113,11 @@
             flex-direction: column;
         }
 
-        /* iPad портрет/ландшафт */
         @media (min-width: 768px) {
             #app-wrapper {
-                max-width: 100%;   /* на iPad – во всю ширину */
-                box-shadow: none;  /* убираем "телефонный" шэдоу, как нативное приложение */
+                max-width: 100%;
+                box-shadow: none;
             }
-        }
-
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #10b981;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #10b981;
         }
 
         @keyframes slide-up {
@@ -151,10 +134,9 @@
 <div id="app-root">
     <div id="app-wrapper" class="relative">
 
-        <!-- ============ TOP APP BAR ============ -->
+        <!-- TOP APP BAR -->
         <header class="shrink-0 z-30 px-5 pt-4 pb-3 bg-gradient-to-b from-appbg via-appbg/95 to-transparent flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <!-- Logo -->
                 <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/40">
                     <i class="fa-solid fa-water text-white text-lg"></i>
                 </div>
@@ -167,9 +149,9 @@
             </div>
         </header>
 
-        <!-- ============ SCROLLABLE CONTENT ============ -->
+        <!-- SCROLLABLE CONTENT -->
         <div class="flex-1 overflow-hidden relative">
-            <!-- 1. WAVE METER -->
+            <!-- 1. METER -->
             <main id="tab-meter" class="tab-content active pb-24 h-full overflow-y-auto hide-scrollbar">
                 <section class="px-5 pb-6 space-y-6">
 
@@ -183,9 +165,8 @@
                         </span>
                     </div>
 
-                    <!-- Add Observation Card -->
+                    <!-- ADD OBSERVATION -->
                     <div class="bg-appbg-soft rounded-3xl p-4 shadow-card border border-white/10">
-                        <!-- Photo -->
                         <label class="block relative w-full h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-appbg-softer via-appbg to-black/90 border border-dashed border-white/15 cursor-pointer group mb-4">
                             <input id="wave-photo" type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" />
                             <div class="absolute inset-0 flex flex-col items-center justify-center text-center transition-all group-hover:bg-white/5">
@@ -198,7 +179,6 @@
                             <img id="wave-photo-preview" src="" alt="" class="w-full h-full object-cover hidden" />
                         </label>
 
-                        <!-- Spot / location -->
                         <div class="space-y-3">
                             <div class="flex items-center bg-black/30 rounded-2xl px-3 py-2 border border-white/10">
                                 <i class="fa-solid fa-location-dot text-brand-500 text-sm mr-3"></i>
@@ -207,7 +187,6 @@
                                        class="bg-transparent flex-1 text-sm placeholder-gray-500 focus:outline-none text-gray-100" />
                             </div>
 
-                            <!-- Date + Time -->
                             <div class="flex space-x-3">
                                 <div class="flex-1 flex items-center bg-black/30 rounded-2xl px-3 py-2 border border-white/10">
                                     <i class="fa-regular fa-calendar text-gray-400 text-xs mr-2.5"></i>
@@ -221,13 +200,11 @@
                                 </div>
                             </div>
 
-                            <!-- Weather -->
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-2">Weather</p>
                                 <div id="weather-selector" class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1"></div>
                             </div>
 
-                            <!-- Height slider -->
                             <div class="mt-1">
                                 <div class="flex justify-between items-center mb-1">
                                     <span class="text-xs text-gray-400 uppercase tracking-wide">Wave height (optional)</span>
@@ -240,21 +217,27 @@
                                 </div>
                             </div>
 
-                            <!-- Save -->
                             <button id="save-btn"
                                     class="mt-3 w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-400 text-sm font-semibold text-black shadow-lg shadow-emerald-500/40 active:scale-[0.97] transition-all flex items-center justify-center space-x-2">
                                 <i class="fa-solid fa-plus"></i>
                                 <span>Save observation</span>
                             </button>
+
+                            <!-- Reset observations -->
+                            <button id="reset-btn"
+                                    class="mt-2 w-full py-2.5 rounded-2xl bg-transparent text-[12px] font-medium text-red-400 border border-red-500/50 active:scale-[0.97] transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-rotate-left text-xs"></i>
+                                <span>Reset observations</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Recent Logs -->
+                    <!-- RECENT LOGS -->
                     <section class="mt-4">
                         <div class="flex items-center justify-between mb-3">
                             <h2 class="text-sm font-semibold tracking-wide uppercase text-gray-400">Recent observations</h2>
-                            <button class="text-[11px] text-brand-400 flex items-center space-x-1">
-                                <i class="fa-solid fa-sort-amount-down text-xs"></i><span>Newest</span>
+                            <button id="sort-btn" class="text-[11px] text-brand-400 flex items-center space-x-1">
+                                <i class="fa-solid fa-sort-amount-down text-xs"></i><span id="sort-label">Newest</span>
                             </button>
                         </div>
 
@@ -282,7 +265,6 @@
                         <p class="text-xs text-gray-400 mt-1">How your sessions stack up over time.</p>
                     </div>
 
-                    <!-- Filters -->
                     <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">
                         <button id="filter-all" class="filter-chip px-4 py-1.5 rounded-full text-[11px] font-semibold bg-brand-500 text-black shadow-md whitespace-nowrap">
                             All spots
@@ -298,21 +280,20 @@
                         </button>
                     </div>
 
-                    <!-- Line chart -->
                     <div class="bg-appbg-soft rounded-3xl p-4 shadow-card border border-white/10">
                         <div class="flex justify-between items-center mb-3">
                             <div>
                                 <h3 class="text-sm font-semibold text-gray-100">Wave height history</h3>
                                 <p class="text-[10px] text-gray-500 mt-0.5">Based on your logged observations</p>
                             </div>
-                            <button class="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center border border-white/10">
+                            <button id="refresh-chart"
+                                    class="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center border border-white/10">
                                 <i class="fa-solid fa-arrows-rotate text-[11px] text-gray-300"></i>
                             </button>
                         </div>
                         <div id="waveChart" class="w-full h-[230px]"></div>
                     </div>
 
-                    <!-- Stats -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-appbg-soft rounded-3xl p-4 border border-white/10 flex flex-col justify-between h-32">
                             <div class="flex items-center justify-between">
@@ -400,12 +381,11 @@
                         </div>
                     </div>
 
-                    <!-- App Settings -->
+                    <!-- THEME ONLY -->
                     <section class="space-y-4 mt-4">
                         <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">App settings</h2>
 
                         <div class="bg-appbg-soft rounded-3xl border border-white/10 shadow-card divide-y divide-white/5">
-
                             <!-- Theme -->
                             <div class="p-4 flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
@@ -429,62 +409,25 @@
                                     </button>
                                 </div>
                             </div>
-
-                            <!-- Language -->
-                            <div class="p-4 flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-gray-300">
-                                        <i class="fa-solid fa-globe"></i>
-                                    </div>
-                                    <span class="font-medium text-sm text-gray-100">Language</span>
-                                </div>
-                                <button class="flex items-center space-x-2 text-xs text-gray-300">
-                                    <span id="lang-label">English</span>
-                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                                </button>
-                            </div>
-
-                            <!-- Notifications -->
-                            <div class="p-4 flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-yellow-300">
-                                        <i class="fa-solid fa-bell"></i>
-                                    </div>
-                                    <span class="font-medium text-sm text-gray-100">Swell alerts</span>
-                                </div>
-                                <div class="relative inline-block w-11 align-middle select-none transition duration-200 ease-in">
-                                    <input id="notif-toggle" type="checkbox"
-                                           class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-transparent appearance-none cursor-pointer right-5" />
-                                    <label for="notif-toggle"
-                                           class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer">
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Future -->
-                            <div class="p-4 flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-9 h-9 rounded-2xl bg-black/40 flex items-center justify-center text-blue-300">
-                                        <i class="fa-solid fa-location-crosshairs"></i>
-                                    </div>
-                                    <span class="font-medium text-sm text-gray-100">Smart spot suggestions</span>
-                                </div>
-                                <span class="text-[10px] px-2 py-1 rounded-full bg-white/5 text-gray-400 border border-white/10">
-                                    Coming soon
-                                </span>
-                            </div>
                         </div>
 
-                        <button id="logout-btn"
-                                class="w-full mt-2 py-3 text-sm font-medium rounded-2xl bg-red-500/10 text-red-300 border border-red-500/40 active:scale-[0.97] transition">
-                            Log out
+                        <!-- SAVE SETTINGS -->
+                        <button id="profile-save-btn"
+                                class="w-full mt-2 py-3 text-sm font-medium rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-400 text-black border border-emerald-400/60 shadow-lg shadow-emerald-500/40 active:scale-[0.97] transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk text-xs"></i>
+                            <span>Save settings</span>
                         </button>
+
+                        <div id="profile-save-toast"
+                             class="fixed left-1/2 -translate-x-1/2 bottom-20 px-4 py-2 rounded-full bg-black/80 text-xs text-emerald-200 border border-emerald-400/30 shadow-lg opacity-0 pointer-events-none transition-opacity duration-300">
+                            Profile saved
+                        </div>
                     </section>
                 </section>
             </main>
         </div>
 
-        <!-- ============ BOTTOM NAV ============ -->
+        <!-- BOTTOM NAV -->
         <nav class="shrink-0 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/95 to-black/80 border-top border-white/10 px-6 pt-2 pb-3 flex justify-between items-center z-40">
             <button onclick="switchTab('tab-meter', this)"
                     class="nav-btn active flex flex-col items-center space-y-0.5 w-14 text-brand-400">
@@ -508,7 +451,7 @@
             </button>
         </nav>
 
-        <!-- ============ MODAL: TOP WAVE DETAILS ============ -->
+        <!-- MODAL TOP WAVE -->
         <div id="wave-modal" class="fixed inset-0 z-50 hidden">
             <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeWaveModal()"></div>
             <div class="absolute bottom-0 left-0 w-full h-[85vh] bg-appbg rounded-t-3xl overflow-y-auto hide-scrollbar animate-slide-up border-t border-white/10">
@@ -565,22 +508,30 @@
 </div>
 
 <script>
-    /* ---------- КОНСТАНТЫ ДЛЯ localStorage ---------- */
     const LS_KEYS = {
         OBSERVATIONS: 'luckywave_metr_observations_v1',
-        THEME: 'luckywave_metr_theme_v1',
         PROFILE: 'luckywave_metr_profile_v1',
-        NOTIF: 'luckywave_metr_notif_v1'
+        THEME: 'luckywave_metr_theme_v1'
     };
 
-    /* ---------- ГЛОБАЛ ---------- */
     let observations = [];
     let chartRendered = false;
     let currentWeather = 'Sunny';
     let topWaves = [];
+    let sortNewest = true;
     let currentTheme = 'dark';
 
-    /* ---------- УТИЛЫ ---------- */
+    function saveToStorage(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.warn(e); }
+    }
+    function loadFromStorage(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            return JSON.parse(raw);
+        } catch (e) { console.warn(e); return fallback; }
+    }
+
     function formatDateTime(dateStr,timeStr){
         if(!dateStr && !timeStr) return '—';
         try{
@@ -602,27 +553,6 @@
         }
     }
 
-    /* ---------- localStorage HELPERS ---------- */
-    function saveToStorage(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {
-            console.warn('localStorage save error', e);
-        }
-    }
-
-    function loadFromStorage(key, fallback) {
-        try {
-            const raw = localStorage.getItem(key);
-            if (!raw) return fallback;
-            return JSON.parse(raw);
-        } catch (e) {
-            console.warn('localStorage load error', e);
-            return fallback;
-        }
-    }
-
-    /* ---------- ТАБЫ ---------- */
     function switchTab(tabId,btn){
         document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
@@ -634,10 +564,9 @@
         btn.classList.remove('text-gray-500');
         btn.classList.add('text-brand-400');
 
-        if(tabId==='tab-analytics'){ renderChart(); }
+        if(tabId==='tab-analytics'){ renderChart(true); }
     }
 
-    /* ---------- WAVE METER ---------- */
     function initWeatherSelector(){
         const options = [
             {label:'Sunny', icon:'fa-sun'},
@@ -645,14 +574,15 @@
             {label:'Rainy', icon:'fa-cloud-showers-heavy'},
             {label:'Stormy', icon:'fa-cloud-bolt'},
             {label:'Windy', icon:'fa-wind'},
-            {label:'Foggy', icon:'fa-smog'}
+            {label:'Foggy', icon:'fa-smog'},
+            {label:'Partly Cloudy', icon:'fa-cloud-sun'}
         ];
         const container = document.getElementById('weather-selector');
         container.innerHTML = '';
         options.forEach(opt=>{
             const btn = document.createElement('button');
             btn.type='button';
-            btn.className = 'weather-btn flex-shrink-0 flex flex-col items-center justify-center w-16 h-18 rounded-2xl text-xs px-1 py-2 border border-white/10 bg-black/40 text-gray-300';
+            btn.className = 'weather-btn flex-shrink-0 flex flex-col items-center justify-center w-16 rounded-2xl text-xs px-1 py-2 border border-white/10 bg-black/40 text-gray-300';
             btn.innerHTML = `<i class="fa-solid ${opt.icon} mb-1"></i><span>${opt.label}</span>`;
             if(opt.label===currentWeather){
                 btn.classList.add('bg-brand-500','text-black','border-brand-400');
@@ -690,6 +620,7 @@
             reader.readAsDataURL(file);
         });
     }
+
     function createObservationCard(obs){
         const div = document.createElement('div');
         div.className = 'bg-appbg-soft rounded-3xl p-3 border border-white/10 flex space-x-3 shadow-card';
@@ -701,10 +632,18 @@
             <div class="flex-1 flex flex-col justify-between py-0.5">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-100 truncate max-w-[200px]">${obs.spot || 'Unnamed spot'}</h4>
+                        <h4 class="text-sm font-semibold text-gray-100 truncate max-w-[170px]">${obs.spot || 'Unknown spot'}</h4>
                         <p class="text-[11px] text-gray-500 mt-0.5">${formatDateTime(obs.date,obs.time)}</p>
                     </div>
-                    ${obs.height ? `<span class="px-2 py-0.5 rounded-full bg-brand-500/10 text-[10px] text-brand-300 border border-brand-400/30">${obs.height.toFixed(1)} ft</span>` : ''}
+                    <div class="flex items-center space-x-1">
+                        ${typeof obs.height === 'number'
+                            ? `<span class="px-2 py-0.5 rounded-full bg-emerald-900/40 text-[10px] text-emerald-200 border border-emerald-500/50">${obs.height.toFixed(1)} ft</span>`
+                            : ''}
+                        <button data-id="${obs.id}"
+                                class="delete-log-btn w-7 h-7 rounded-full bg-black/40 border border-red-500/40 flex items-center justify-center text-red-400 text-[11px] hover:bg-red-600/20 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-2 mt-2">
                     <i class="fa-solid ${weatherIcon(obs.weather)} text-xs text-gray-300"></i>
@@ -714,12 +653,55 @@
         `;
         return div;
     }
+
     function renderObservations(){
         const container = document.getElementById('logs-container');
         container.innerHTML='';
-        observations.slice().reverse().forEach(o=>container.appendChild(createObservationCard(o)));
-        document.getElementById('meter-count').textContent = `${observations.length} log${observations.length===1?'':'s'}`;
+        const list = observations.slice();
+        list.sort((a,b)=>{
+            const da = new Date(a.date+'T'+a.time);
+            const db = new Date(b.date+'T'+b.time);
+            return sortNewest ? (db-da) : (da-db);
+        });
+        list.forEach(o=>container.appendChild(createObservationCard(o)));
+        document.getElementById('meter-count').textContent =
+            `${observations.length} log${observations.length===1?'':'s'}`;
     }
+
+    function addObservation(spot,date,time,height,photoData){
+        const now = new Date();
+        const obs = {
+            id: Date.now() + Math.random().toString(16).slice(2),
+            spot: spot || 'Unknown spot',
+            date: date || now.toISOString().slice(0,10),
+            time: time || now.toTimeString().slice(0,5),
+            weather: currentWeather,
+            height: isNaN(height) ? null : height,
+            photo: photoData || ''
+        };
+        observations.push(obs);
+        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
+        renderObservations();
+        updateAnalyticsStats();
+        chartRendered=false;
+    }
+
+    function deleteObservation(id){
+        observations = observations.filter(o=>o.id!==id);
+        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
+        renderObservations();
+        updateAnalyticsStats();
+        chartRendered=false;
+    }
+
+    function resetObservations(){
+        observations = [];
+        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
+        renderObservations();
+        updateAnalyticsStats();
+        chartRendered=false;
+    }
+
     function initSaveObservation(){
         document.getElementById('save-btn').addEventListener('click',()=>{
             const spot = document.getElementById('spot-input').value.trim();
@@ -739,27 +721,48 @@
             } else {
                 addObservation(spot,date,time,height,photoData);
             }
+
+            document.getElementById('spot-input').value = '';
+            document.getElementById('date-input').value = '';
+            document.getElementById('time-input').value = '';
+            photoInput.value = '';
+            document.getElementById('wave-photo-preview').classList.add('hidden');
+        });
+
+        document.getElementById('reset-btn').addEventListener('click',()=>{
+            if(confirm('Reset all observations? This cannot be undone.')){
+                resetObservations();
+            }
         });
     }
-    function addObservation(spot,date,time,height,photoData){
-        const now = new Date();
-        const obs = {
-            spot: spot || 'Unknown spot',
-            date: date || now.toISOString().slice(0,10),
-            time: time || now.toTimeString().slice(0,5),
-            weather: currentWeather,
-            height: isNaN(height) ? null : height,
-            photo: photoData || ''
-        };
-        observations.push(obs);
-        saveToStorage(LS_KEYS.OBSERVATIONS, observations);
-        renderObservations();
-        updateAnalyticsStats();
-        chartRendered=false;
-        alert('Observation saved.');
+
+    function initSortButton(){
+        const btn = document.getElementById('sort-btn');
+        const label = document.getElementById('sort-label');
+        btn.addEventListener('click',()=>{
+            sortNewest = !sortNewest;
+            label.textContent = sortNewest ? 'Newest' : 'Oldest';
+            const icon = btn.querySelector('i');
+            icon.classList.toggle('fa-sort-amount-down');
+            icon.classList.toggle('fa-sort-amount-up');
+            renderObservations();
+        });
     }
 
-    /* ---------- TOP WAVES ---------- */
+    function initDeleteDelegation(){
+        const container = document.getElementById('logs-container');
+        container.addEventListener('click',(e)=>{
+            const btn = e.target.closest('.delete-log-btn');
+            if(!btn) return;
+            e.stopPropagation();
+            e.preventDefault();
+            const id = btn.getAttribute('data-id');
+            if(!id) return;
+            deleteObservation(id);
+        });
+    }
+
+    /* TOP WAVES DATA */
     function initTopWavesData(){
         topWaves = [
             {
@@ -1009,7 +1012,7 @@
         document.getElementById('wave-modal').classList.add('hidden');
     }
 
-    /* ---------- ANALYTICS ---------- */
+    /* ANALYTICS */
     function buildChartData(){
         if(observations.length===0){
             return {
@@ -1025,8 +1028,8 @@
             y: sorted.map(o=>o.height || 0)
         };
     }
-    function renderChart(){
-        if(chartRendered) return;
+    function renderChart(force){
+        if(chartRendered && !force) return;
         const data = buildChartData();
         const trace = {
             x:data.x,
@@ -1097,16 +1100,46 @@
         document.getElementById('stat-storm-desc').textContent = desc;
     }
 
-    /* ---------- PROFILE/THEME ---------- */
+    function initFilters(){
+        document.querySelectorAll('.filter-chip').forEach(chip=>{
+            chip.addEventListener('click',()=>{
+                document.querySelectorAll('.filter-chip').forEach(c=>{
+                    c.classList.remove('bg-brand-500','text-black','shadow-md');
+                    c.classList.add('bg-appbg-soft','text-gray-200');
+                });
+                chip.classList.remove('bg-appbg-soft','text-gray-200');
+                chip.classList.add('bg-brand-500','text-black','shadow-md');
+                chartRendered=false;
+                renderChart(true);
+            });
+        });
+    }
+
+    /* PROFILE + AVATAR + THEME (сохранение фото профиля в localStorage) */
+
     function initAvatarUpload(){
         const input = document.getElementById('avatar-input');
         const img = document.getElementById('avatar-preview');
         input.addEventListener('change',ev=>{
             const file = ev.target.files[0];
             if(!file) return;
+
             const reader = new FileReader();
             reader.onload = e=>{
-                img.src = e.target.result;
+                const dataUrl = e.target.result;
+
+                // показываем аватар
+                img.src = dataUrl;
+
+                // сразу же сохраняем новый аватар в профиле в localStorage
+                const existing = loadFromStorage(LS_KEYS.PROFILE, {});
+                const profile = {
+                    ...existing,
+                    firstName: document.getElementById('first-name').value || existing.firstName || '',
+                    lastName: document.getElementById('last-name').value || existing.lastName || '',
+                    avatar: dataUrl
+                };
+                saveToStorage(LS_KEYS.PROFILE, profile);
             };
             reader.readAsDataURL(file);
         });
@@ -1145,6 +1178,7 @@
             root.style.background = 'radial-gradient(circle at top left,#111827,#050816 55%)';
             document.body.classList.add('dark');
         }
+
         document.querySelectorAll('.theme-btn').forEach(btn=>{
             btn.classList.remove('bg-white','text-black','font-semibold','text-emerald-300');
             btn.classList.add('text-gray-300');
@@ -1163,7 +1197,6 @@
             }
         });
 
-        // сохраняем тему
         saveToStorage(LS_KEYS.THEME, theme);
     }
     function initThemeButtons(){
@@ -1173,49 +1206,26 @@
             });
         });
     }
-    function initLogout(){
-        document.getElementById('logout-btn').addEventListener('click',()=>{
-            alert('Logging out is not connected to a backend in this demo, but the button works.');
-        });
+    function loadThemeOnStart() {
+        const storedTheme = loadFromStorage(LS_KEYS.THEME, 'dark');
+        applyTheme(storedTheme);
     }
 
-    /* ---------- NOTIFICATIONS TOGGLE (сохранение) ---------- */
-    function initNotificationsToggle() {
-        const toggle = document.getElementById('notif-toggle');
-        const saved = loadFromStorage(LS_KEYS.NOTIF, null);
-        if (saved && typeof saved.enabled === 'boolean') {
-            toggle.checked = saved.enabled;
-        }
-        toggle.addEventListener('change', () => {
-            saveToStorage(LS_KEYS.NOTIF, { enabled: toggle.checked });
-        });
+    function showProfileToast() {
+        const toast = document.getElementById('profile-save-toast');
+        toast.style.opacity = '1';
+        setTimeout(()=>{ toast.style.opacity = '0'; },1500);
     }
 
-    /* ---------- FILTER CHIPS (демо) ---------- */
-    function initFilters(){
-        document.querySelectorAll('.filter-chip').forEach(chip=>{
-            chip.addEventListener('click',()=>{
-                document.querySelectorAll('.filter-chip').forEach(c=>{
-                    c.classList.remove('bg-brand-500','text-black','shadow-md');
-                    c.classList.add('bg-appbg-soft','text-gray-200');
-                });
-                chip.classList.remove('bg-appbg-soft','text-gray-200');
-                chip.classList.add('bg-brand-500','text-black','shadow-md');
-                chartRendered=false;
-                renderChart();
-            });
-        });
-    }
-
-    /* ---------- SAMPLE DATA (если ничего нет в localStorage) ---------- */
     function seedSampleObservationsIfEmpty(){
         const stored = loadFromStorage(LS_KEYS.OBSERVATIONS, null);
-        if (stored && Array.isArray(stored) && stored.length > 0) {
+        if (stored && Array.isArray(stored)) {
             observations = stored;
             return;
         }
         observations = [
             {
+                id: Date.now(),
                 spot:'Pipeline, Oahu',
                 date:'2025-10-24',
                 time:'08:30',
@@ -1224,6 +1234,7 @@
                 photo:'https://storage.googleapis.com/uxpilot-auth.appspot.com/05a921f9c8-f92eb765ad0062a0cb36.png'
             },
             {
+                id: Date.now()+1,
                 spot:'Shipstern Bluff',
                 date:'2025-10-22',
                 time:'16:15',
@@ -1235,49 +1246,34 @@
         saveToStorage(LS_KEYS.OBSERVATIONS, observations);
     }
 
-    /* ---------- LOAD THEME ON START ---------- */
-    function loadThemeOnStart() {
-        const storedTheme = loadFromStorage(LS_KEYS.THEME, 'dark');
-        applyTheme(storedTheme);
-    }
-
-    /* ---------- INIT ---------- */
     document.addEventListener('DOMContentLoaded',()=>{
-        // данные
         seedSampleObservationsIfEmpty();
         renderObservations();
 
-        // UI init
         initWeatherSelector();
         initHeightSlider();
         initPhotoInput();
         initSaveObservation();
+        initSortButton();
+        initDeleteDelegation();
 
         initTopWavesData();
         renderTopWaves();
         updateAnalyticsStats();
         initFilters();
+        renderChart(true);
+        document.getElementById('refresh-chart').addEventListener('click',()=>{chartRendered=false;renderChart(true);});
 
-        initAvatarUpload();
+        initAvatarUpload();           // avatar upload + instant save
         initThemeButtons();
-        initLogout();
-        initNotificationsToggle();
-
-        // профиль
-        loadProfileFromStorage();
-
-        // следим за изменением имени/фамилии и сохраняем
-        document.getElementById('first-name').addEventListener('input', saveProfileToStorage);
-        document.getElementById('last-name').addEventListener('input', saveProfileToStorage);
-
-        // сохраняем аватар при изменении файла
-        document.getElementById('avatar-input').addEventListener('change', () => {
-            // дождёмся FileReader в initAvatarUpload, дадим ему чуть времени
-            setTimeout(saveProfileToStorage, 300);
-        });
-
-        // тема
+        loadProfileFromStorage();     // restores name + avatar
         loadThemeOnStart();
+
+        document.getElementById('profile-save-btn').addEventListener('click',()=>{
+            saveProfileToStorage();
+            saveToStorage(LS_KEYS.THEME,currentTheme);
+            showProfileToast();
+        });
     });
 </script>
 
